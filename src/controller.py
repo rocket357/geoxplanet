@@ -38,7 +38,7 @@ class GeoXPlanet:
         "172.16.0.0/12",    # RFC1918 private range
         "192.0.2.0/24",     # TEST-NET example
         "192.168.0.0/16",   # RFC1918 private range
-        "169.254.0.0/16",       # APIPA range
+        "169.254.0.0/16",   # APIPA range
         "224.0.0.0/4",      # IPv4 multicast
         "240.0.0.0/4"       # Reserved Address Range
     ]
@@ -124,6 +124,7 @@ class GeoXPlanet:
         # and now the fun begins...
         locdir = os.listdir(os.path.join(self.GXPDIR,"GeoLite2"))
         ipv4_loc = os.path.join(self.GXPDIR,"GeoLite2",locdir[0],"GeoLite2-City-Blocks-IPv4.csv")
+        # TODO - ipv6 support 
         ipv6_loc = os.path.join(self.GXPDIR,"GeoLite2",locdir[0],"GeoLite2-City-Blocks-IPv6.csv")
         try:
             self.db = sqlite3.connect(self.DB_SQL)
@@ -139,6 +140,7 @@ class GeoXPlanet:
 );"""
         self.dbc = self.db.cursor()
         self.dbc.execute(create_table)
+        db_build_start = time.time()
         ips_lat_lon = []
         count = 0
         print "Done!"
@@ -155,19 +157,20 @@ class GeoXPlanet:
             net = IPNetwork(cols[0]).network
             brd = IPNetwork(cols[0]).broadcast
             if net is None or brd is None:
-                    continue
+                continue
             ips_lat_lon.append((int(IPAddress(net)),int(IPAddress(brd)),cols[7],cols[8]))
             count = count + 1
-            if count % 1000 == 0:  # running in batches to reduce memory overhead
-                    try:
-                            #print "Rows processed:  %s" % count
-                            self.dbc.executemany("INSERT INTO IpBlocks (ipstart, ipend, lat, lon) VALUES (?, ?, ?, ?);", ips_lat_lon)
-                            ips_lat_lon = []
-                    except Exception, e:
-                            print "FUCKED:  %s %s %s %s" % (net, brd, cols[7], cols[8])
-                            print e
-                    finally:
-                            ips_lat_lon = []
+            if count % 100000 == 0:  # running in batches to reduce memory overhead
+                try:
+                    #print "Rows processed:  %s" % count
+                    self.dbc.executemany("INSERT INTO IpBlocks (ipstart, ipend, lat, lon) VALUES (?, ?, ?, ?);", ips_lat_lon)
+                    ips_lat_lon = []
+                    self.db.commit()
+                except Exception, e:
+                    print "FUCKED:  %s %s %s %s" % (net, brd, cols[7], cols[8])
+                    print e
+                finally:
+                    ips_lat_lon = []
         self.dbc.executemany("INSERT INTO IpBlocks (ipstart, ipend, lat, lon) VALUES (?, ?, ?, ?);", ips_lat_lon)
         self.db.commit()
         print "Done!"
@@ -180,6 +183,7 @@ class GeoXPlanet:
         self.dbc.execute(create_index)
         self.db.commit()
         print "Done!"
+        print "DB Build Completed in %s seconds" % (time.time() - db_build_start)
 
     def lookupIP(self, IP):
         start_time = time.time()
@@ -243,6 +247,7 @@ class GeoXPlanet:
             pass
 
     def run(self):
+        delay = float(self.cfg.get("General","DELAY"))
         while True:
-            time.sleep(float(self.cfg.get("General","DELAY")))
+            time.sleep(delay)
             self.getLocalActiveConnections()
