@@ -29,13 +29,15 @@ except IOError:
 	if resp.lower() == 'yes':
 		print "Creating default geoxplanet directory and files"
 		print "Creating directory: %s" % GXPDIR
+		if not os.path.isdir(CONFDIR):
+			try:
+				os.mkdir(CONFDIR)
+			except OSError, err:
+				print err
+				sys.exit()
 		try:
 			os.mkdir(GXPDIR)
-		except IOError, err:
-			os.mkdir(CONFDIR)
-			os.mkdir(GXPDIR)
 		except OSError, err:
-			print "Failed to make directory %s! Bailing!" % GXPDIR
 			print err
 			sys.exit()
 		configfp = open(defaultConfig, 'w')
