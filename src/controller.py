@@ -143,12 +143,12 @@ class GeoXPlanet:
         sys.stdout.flush()
         with open(ipv4_loc,'rb') as d:
             data = d.readlines()
-        for line in data.readlines():
+        for line in data:
             if 'network' in line:
                 continue
             cols = line.split(',')
             #print cols[0]
-            sys.stdout.flush()
+            #sys.stdout.flush()
             net = IPNetwork(cols[0]).network
             brd = IPNetwork(cols[0]).broadcast
             if net is None or brd is None:
@@ -193,7 +193,7 @@ class GeoXPlanet:
             self.locationCache[IP] = row
             #print "%s in %s" % (IP, row)
             #print "lookupIP took %s seconds" % (time.time() - start_time)
-            sys.stdout.flush()
+            #sys.stdout.flush()
 
     def _isMartian(self, ipAddr):
         for cidr in self.martians:
@@ -211,7 +211,6 @@ class GeoXPlanet:
         for conn in connectionList:
             if 'ESTABLISHED' not in conn:
                 continue
-            sys.stdout.flush()
             if self.platform == 'win32':
                 ipport = conn.split()[2]
             else:
@@ -219,12 +218,10 @@ class GeoXPlanet:
             if 'openbsd' in sys.platform:
                 ipAddr = '.'.join(ipport.split('.')[:-1])
                 ipPort = ipport.split('.')[-1]
-                #print "%s -> %s" % (ipAddr, ipPort)
             else:
                 ipAddr = ipport.split(':')[0]
                 ipPort = ipport.split(':')[1]
             if not self._isMartian(ipAddr):
-                #print ipAddr
                 self.lookupIP(ipAddr)
                 localActiveConnections.append("%s,%s" % (ipAddr, ipPort))
                 # TODO - causes random hangs?
