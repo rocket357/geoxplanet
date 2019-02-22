@@ -24,12 +24,11 @@ class GeoXPlanet:
 	GXPDIR = None
 	platform = None
 	desktop = None
-	netstat = None
+	netstat = 'netstat -na'
 	flowsrc = None
 	windows = [ 'Win', 'Mic' ]
 	locationCache = {}
 	tracedIPs = {}
-	hexChars = ['0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F']
 	# https://www.cisco.com/assets/sol/sb/Switches_Emulators_v2_2_015/help/nk_configuring_device_security26.html
 	# with RFC1918 ranges added in
 	martians = [ 
@@ -48,10 +47,6 @@ class GeoXPlanet:
 		self.GXPDIR = config.get("Static", "GXPDIR")
 		self.platform = sys.platform
 		print "Starting up on %s" % self.platform
-		if self.platform in self.windows:
-			self.netstat = 'netstat -na'
-		else:
-			self.netstat = 'netstat -na 2>/dev/null | grep ESTABLISHED'
 		self.setupDB()
 
 	def setupDB(self):
