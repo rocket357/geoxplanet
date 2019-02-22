@@ -154,11 +154,18 @@ class GeoXPlanet:
             cols = line.split(',')
             #print cols[0]
             #sys.stdout.flush()
-            net = IPNetwork(cols[0]).network
-            brd = IPNetwork(cols[0]).broadcast
+            mask_bits = int(cols[0].split('/')[1])
+            net = int(IPNetwork(cols[0]).network)
+            if mask_bits == 31:
+                brd = int(IPNetwork(cols[0]).network) + 1
+            elif mask_bits == 32:
+                brd = net
+            else: 
+                brd = int(IPNetwork(cols[0]).broadcast)
             if net is None or brd is None:
+                print "Oops:  %s failed to import!" % cols[0]
                 continue
-            ips_lat_lon.append((int(IPAddress(net)),int(IPAddress(brd)),cols[7],cols[8]))
+            ips_lat_lon.append((net,brd,cols[7],cols[8]))
             count = count + 1
             if count % 100000 == 0:  # running in batches to reduce memory overhead
                 try:
