@@ -171,7 +171,9 @@ class GeoXPlanet:
         print "Rows processed:  %s" % count
         print "Creating indexes...",
         sys.stdout.flush()
-        create_index = """CREATE INDEX net_idx ON IpBlocks(ipstart,ipend,lat,lon);"""
+        create_index = """CREATE INDEX ipstart_idx ON IpBlocks(ipstart,lat,lon);"""
+        self.dbc.execute(create_index)
+        create_index = """CREATE INDEX ipend_idx ON IpBlocks(ipend,lat,lon);"""
         self.dbc.execute(create_index)
         self.db.commit()
         print "Done!"
@@ -185,11 +187,11 @@ class GeoXPlanet:
         else:
             print "Pulling %s from db..." % IP
             IPE = int(IPAddress(IP))
-            query = "SELECT * FROM IpBlocks WHERE ipstart <= %s and ipend >= %s;" % (IPE, IPE)
+            query = "SELECT lat, lon FROM IpBlocks WHERE ipstart <= %s and ipend >= %s LIMIT 1;" % (IPE, IPE)
             #query_begin = time.time()
             res = self.dbc.execute(query)
-            #print "dbc.execute took %s seconds" % (time.time() - query_begin)
             row = res.fetchone()
+            #print "dbc.execute took %s seconds" % (time.time() - query_begin)
             self.locationCache[IP] = row
             #print "%s in %s" % (IP, row)
             #print "lookupIP took %s seconds" % (time.time() - start_time)
