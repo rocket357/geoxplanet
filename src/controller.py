@@ -187,6 +187,7 @@ class GeoXPlanet:
 			#print "IP Found in locationCache"
 			return self.locationCache[IP]
 		else:
+			print "Pulling %s from db..." % IP
 			IPE = int(IPAddress(IP))
 			query = "SELECT * FROM IpBlocks WHERE ipstart <= %s and ipend >= %s;" % (IPE, IPE)
 			#query_begin = time.time()
@@ -213,7 +214,7 @@ class GeoXPlanet:
 		connectionList = os.popen(self.netstat).readlines()
 		for conn in connectionList:
 			if 'ESTABLISHED' in conn:
-				print conn
+				#print conn
 				sys.stdout.flush()
 				if self.platform in self.windows:
 					ipport = conn.split()[2]
@@ -222,12 +223,12 @@ class GeoXPlanet:
 				if 'openbsd' in sys.platform:
 					ipAddr = '.'.join(ipport.split('.')[:-1])
 					ipPort = ipport.split('.')[-1]
-					print "%s -> %s" % (ipAddr, ipPort)
+					#print "%s -> %s" % (ipAddr, ipPort)
 				else:
 					ipAddr = ipport.split(':')[0]
 					ipPort = ipport.split(':')[1]
 				if not self._isMartian(ipAddr):
-					print ipAddr
+					#print ipAddr
 					self.lookupIP(ipAddr)
 					localActiveConnections.append("%s,%s" % (ipAddr, ipPort))
 					# TODO - causes random hangs?
@@ -247,7 +248,6 @@ class GeoXPlanet:
 
 	def run(self):
 		while True:
-			time.sleep(5)
-			print "Checking again!"
+			time.sleep(float(self.cfg.get("General","DELAY")))
 			self.getLocalActiveConnections()
 			

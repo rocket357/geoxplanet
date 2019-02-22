@@ -13,7 +13,8 @@ from controller import GeoXPlanet
 
 GXPVERSION = '0.99'
 HOME=os.path.expanduser('~')
-GXPDIR = os.path.join(HOME,".config","GeoXPlanet")
+CONFDIR = os.path.join(HOME,".config")
+GXPDIR = os.path.join(CONFDIR,"GeoXPlanet")
 defaultConfig = os.path.join(GXPDIR,"GeoXPlanet.conf")
 configfp = None
 
@@ -29,6 +30,9 @@ except IOError:
 		print "Creating default geoxplanet directory and files"
 		print "Creating directory: %s" % GXPDIR
 		try:
+			os.mkdir(GXPDIR)
+		except IOError, err:
+			os.mkdir(CONFDIR)
 			os.mkdir(GXPDIR)
 		except OSError, err:
 			print "Failed to make directory %s! Bailing!" % GXPDIR
