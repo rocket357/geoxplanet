@@ -188,7 +188,7 @@ class GeoXPlanet:
 			return self.locationCache[IP]
 		else:
 			IPE = int(IPAddress(IP))
-			query = "SELECT * FROM IpBlocks WHERE ipstart <= %s and ipend => %s;" % (IPE, IPE)
+			query = "SELECT * FROM IpBlocks WHERE ipstart <= %s and ipend >= %s;" % (IPE, IPE)
 			#query_begin = time.time()
 			res = self.dbc.execute(query)
 			#print "dbc.execute took %s seconds" % (time.time() - query_begin)
