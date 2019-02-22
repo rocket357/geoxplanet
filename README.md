@@ -15,5 +15,7 @@ on the IP Connections it finds to public IPs.
 
 Windows Corruption workaround:
     1) Download:  https://geolite.maxmind.com/download/geoip/database/GeoLite2-City-CSV.zip
-    2) Unzip to %USERPROFILE%/.config/GeoXPlanet/GeoLite2/
-The script will then perform a sanity check on the database and rebuild it upon failure.
+    2) Move the downloaded file to %USERPROFILE%/.config/GeoXPlanet
+    3) Unzip the file to %USERPROFILE%/.config/GeoXPlanet/GeoLite2/
+This will create %USERPROFILE%/.config/GeoXPlanet/GeoLite2/GeoLite2-City-CSV_$DATE
+Then relaunch the script which will then perform a sanity check on the database and rebuild it upon failure.
