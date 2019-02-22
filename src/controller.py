@@ -5,7 +5,7 @@
 ## sisson.j@gmail.com
 ##
 ## This script contains the main body of logic for GeoXPlanet.
-## 
+##
 ## BSD 2-clause license
 
 import sys, os, time, csv, codecs
@@ -30,14 +30,15 @@ class GeoXPlanet:
 	tracedIPs = {}
 	# https://www.cisco.com/assets/sol/sb/Switches_Emulators_v2_2_015/help/nk_configuring_device_security26.html
 	# with RFC1918 ranges added in
-	martians = [ 
-		"0.0.0.0/8",		# Source hosts on this network 
+	martians = [
+		"0.0.0.0/8",		# Source hosts on this network
 		"10.0.0.0/8",		# RFC1918 private range
 		"127.0.0.0/8", 		# Internet host loopback address range
 		"172.16.0.0/12",	# RFC1918 private range
 		"192.0.2.0/24",		# TEST-NET example
 		"192.168.0.0/16",	# RFC1918 private range
-		"224.0.0.0/4",		# IPv4 multicast
+        "169.254.0.0/16",       # APIPA range
+        "224.0.0.0/4",		# IPv4 multicast
 		"240.0.0.0/4" 		# Reserved Address Range
 	]
 
@@ -71,7 +72,7 @@ class GeoXPlanet:
 			except Exception, e:
 				print "%s failed sanity checks due to: %s" % (self.DB_SQL, e)
 				sys.exit()
-			
+
 		if not os.path.isfile(DB_CSV):
 			print "I need to download and unzip a copy of MaxMind's free GeoLite2 City database."
 			print "File location:  %s" % DB_URL
@@ -82,9 +83,8 @@ class GeoXPlanet:
 				print "Downloading GeoLocation Database...",
 				sys.stdout.flush()
 				c = requests.get(DB_URL, allow_redirects=True)
-				f = open(DB_CSV, 'w')
-				f.write(c.content)
-				f.close()
+                with open(DB_CSV, 'w') as f:
+                    f.write(c.content)
 				print "Done!"
 				zipfp = zipfile.ZipFile(DB_CSV, 'r')
 				zipdir = os.path.join(self.GXPDIR, "GeoLite2")
@@ -104,8 +104,8 @@ class GeoXPlanet:
 				if resp.lower() == 'yes':
 					print "Downloading update for GeoLocation Database...",
 					c = requests.get(DB_URL, allow_redirects=True)
-					f = open(DB_CSV, 'wb').write(c.content)
-					f.close()
+                    with open(DB_CSV, 'wb') as f:
+                        f.write(c.content)
 					print "Done!"
 					zipfp = zipfile.ZipFile(DB_CSV, 'r')
 					zipdir = os.path.join(self.GXPDIR, "GeoLite2")
@@ -141,29 +141,31 @@ class GeoXPlanet:
 		print "Done!"
 		print "Reading network/latitude/longitude information and inserting into sqlite3 db...",
 		sys.stdout.flush()
-		with open(ipv4_loc,'rb') as data:
-			for line in data.readlines():
-				if 'network' in line:  continue
-				cols = line.split(',')
-				#print cols[0]
-				sys.stdout.flush()
-				net = IPNetwork(cols[0]).network
-				brd = IPNetwork(cols[0]).broadcast
-				if net is None or brd is None:
-					continue
-				ips_lat_lon.append((int(IPAddress(net)),int(IPAddress(brd)),cols[7],cols[8]))
-				count = count + 1
-				if count % 1000 == 0:  # running in batches to reduce memory overhead
-					try:
-						#print "Rows processed:  %s" % count
-						self.dbc.executemany("INSERT INTO IpBlocks (ipstart, ipend, lat, lon) VALUES (?, ?, ?, ?);", ips_lat_lon)
-						ips_lat_lon = []
-					except Exception, e:
-						print "FUCKED:  %s %s %s %s" % (net, brd, cols[7], cols[8])
-						print e
-					finally:
-						ips_lat_lon = []
-			self.dbc.executemany("INSERT INTO IpBlocks (ipstart, ipend, lat, lon) VALUES (?, ?, ?, ?);", ips_lat_lon)
+		with open(ipv4_loc,'rb') as d:
+        	data = d.readlines()
+        for line in data.readlines():
+	        if 'network' in line:
+				continue
+	        cols = line.split(',')
+	        #print cols[0]
+	        sys.stdout.flush()
+	        net = IPNetwork(cols[0]).network
+	        brd = IPNetwork(cols[0]).broadcast
+	        if net is None or brd is None:
+	                continue
+	        ips_lat_lon.append((int(IPAddress(net)),int(IPAddress(brd)),cols[7],cols[8]))
+	        count = count + 1
+	        if count % 1000 == 0:  # running in batches to reduce memory overhead
+	                try:
+	                        #print "Rows processed:  %s" % count
+	                        self.dbc.executemany("INSERT INTO IpBlocks (ipstart, ipend, lat, lon) VALUES (?, ?, ?, ?);", ips_lat_lon)
+	                        ips_lat_lon = []
+	                except Exception, e:
+	                        print "FUCKED:  %s %s %s %s" % (net, brd, cols[7], cols[8])
+	                        print e
+	                finally:
+	                        ips_lat_lon = []
+        self.dbc.executemany("INSERT INTO IpBlocks (ipstart, ipend, lat, lon) VALUES (?, ?, ?, ?);", ips_lat_lon)
 		self.db.commit()
 		print "Done!"
 		print "Rows processed:  %s" % count
@@ -191,13 +193,13 @@ class GeoXPlanet:
 			self.locationCache[IP] = row
 			#print "%s in %s" % (IP, row)
 			#print "lookupIP took %s seconds" % (time.time() - start_time)
-			sys.stdout.flush()	
+			sys.stdout.flush()
 
 	def _isMartian(self, ipAddr):
 		for cidr in self.martians:
 			if self._ipInCIDR(ipAddr, cidr):
 				return True
-		return False	
+		return False
 
 	def _ipInCIDR(self, ipAddr, CIDR):
 		return IPAddress(ipAddr) in IPNetwork(CIDR)
@@ -207,28 +209,28 @@ class GeoXPlanet:
 		traceDict = {}
 		connectionList = os.popen(self.netstat).readlines()
 		for conn in connectionList:
-			if 'ESTABLISHED' in conn:
-				#print conn
-				sys.stdout.flush()
-				if self.platform == 'win32':
-					ipport = conn.split()[2]
-				else:
-					ipport = conn.split()[4]
-				if 'openbsd' in sys.platform:
-					ipAddr = '.'.join(ipport.split('.')[:-1])
-					ipPort = ipport.split('.')[-1]
-					#print "%s -> %s" % (ipAddr, ipPort)
-				else:
-					ipAddr = ipport.split(':')[0]
-					ipPort = ipport.split(':')[1]
-				if not self._isMartian(ipAddr):
-					#print ipAddr
-					self.lookupIP(ipAddr)
-					localActiveConnections.append("%s,%s" % (ipAddr, ipPort))
-					# TODO - causes random hangs?
-					if self.cfg.get("General","Trace") == 'True':
-						if ipAddr not in self.tracedIPs.keys():
-							self.traceroute(ipAddr)
+			if 'ESTABLISHED' not in conn:
+				continue
+			sys.stdout.flush()
+			if self.platform == 'win32':
+				ipport = conn.split()[2]
+			else:
+				ipport = conn.split()[4]
+			if 'openbsd' in sys.platform:
+				ipAddr = '.'.join(ipport.split('.')[:-1])
+				ipPort = ipport.split('.')[-1]
+				#print "%s -> %s" % (ipAddr, ipPort)
+			else:
+				ipAddr = ipport.split(':')[0]
+				ipPort = ipport.split(':')[1]
+			if not self._isMartian(ipAddr):
+				#print ipAddr
+				self.lookupIP(ipAddr)
+				localActiveConnections.append("%s,%s" % (ipAddr, ipPort))
+				# TODO - causes random hangs?
+				if self.cfg.get("General","Trace") == 'True':
+					if ipAddr not in self.tracedIPs.keys():
+						self.traceroute(ipAddr)
 
 	def traceroute(self, ipAddr):
 		# start a separate thread (trace class) so we can continue
@@ -239,10 +241,9 @@ class GeoXPlanet:
 
 	def processList(self, ipList):
 		for ip in ipList:
-			pass	
+			pass
 
 	def run(self):
 		while True:
 			time.sleep(float(self.cfg.get("General","DELAY")))
 			self.getLocalActiveConnections()
-			
