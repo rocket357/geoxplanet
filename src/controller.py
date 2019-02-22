@@ -225,9 +225,10 @@ class GeoXPlanet:
 					#print ipAddr
 					self.lookupIP(ipAddr)
 					localActiveConnections.append("%s,%s" % (ipAddr, ipPort))
-					# TODO - causes random hangs?
-					#if ipAddr not in self.tracedIPs.keys():
-					#	self.traceroute(ipAddr)
+					# TODO - causes random hangs on openbsd?
+					if self.cfg.get("General","Trace") == 'True':
+						if ipAddr not in self.tracedIPs.keys():
+							self.traceroute(ipAddr)
 
 	def traceroute(self, ipAddr):
 		# start a separate thread (trace class) so we can continue

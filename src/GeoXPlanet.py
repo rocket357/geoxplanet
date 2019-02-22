@@ -47,6 +47,8 @@ except IOError:
 DELAY=15
 ; please set DEBUG=True if you run into issues
 DEBUG=False
+; whether or not to traceroute ips
+Trace=False
 
 [Static]
 VERSION=0.99

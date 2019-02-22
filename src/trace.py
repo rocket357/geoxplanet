@@ -12,7 +12,7 @@ class trace(Thread):
 		Thread.__init__(self)
 		self.ipRegex = re.compile("([0-9]*\.[0-9]*\.[0-9]*\.[0-9]*)")
 		self.ipStr = ipStr
-		if sys.platform == 'win32' or sys.platform == 'Mic':
+		if sys.platform == 'win32':
 			self.traceCommand = 'tracert'
 		else:
 			self.traceCommand = 'traceroute'
@@ -22,7 +22,7 @@ class trace(Thread):
 		traceproc = os.popen("%s %s" % (self.traceCommand, self.ipStr))
 		result = traceproc.readlines()
 		for line in result:
-			print line
+			#print line
 			ipMatch = self.ipRegex.search(line)
 			if ipMatch is not None:
 				addr = ipMatch.group(1)
