@@ -26,7 +26,6 @@ class GeoXPlanet:
 	desktop = None
 	netstat = 'netstat -na'
 	flowsrc = None
-	windows = [ 'Win', 'Mic' ]
 	locationCache = {}
 	tracedIPs = {}
 	# https://www.cisco.com/assets/sol/sb/Switches_Emulators_v2_2_015/help/nk_configuring_device_security26.html
@@ -211,7 +210,7 @@ class GeoXPlanet:
 			if 'ESTABLISHED' in conn:
 				#print conn
 				sys.stdout.flush()
-				if self.platform in self.windows:
+				if self.platform == 'win32':
 					ipport = conn.split()[2]
 				else:
 					ipport = conn.split()[4]
