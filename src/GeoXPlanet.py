@@ -12,7 +12,8 @@ import sys, os, time, shutil, ConfigParser
 from controller import GeoXPlanet
 
 GXPVERSION = '0.99'
-GXPDIR = os.path.join(os.environ["HOME"],".config","GeoXPlanet")
+HOME=os.path.expanduser('~')
+GXPDIR = os.path.join(HOME,".config","GeoXPlanet")
 defaultConfig = os.path.join(GXPDIR,"GeoXPlanet.conf")
 configfp = None
 
