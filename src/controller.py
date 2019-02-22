@@ -17,6 +17,7 @@ from trace import trace
 
 class GeoXPlanet:
 
+    DEBUG = None
     db = None
     dbc = None
     cfg = None
@@ -44,6 +45,8 @@ class GeoXPlanet:
 
     def __init__(self, config):
         self.cfg = config
+        self.DEBUG = (config.get("General", "DEBUG") == 'True')
+        if self.DEBUG: print "Debugging enabled."
         self.GXPDIR = config.get("Static", "GXPDIR")
         self.platform = sys.platform
         print "Starting up on %s" % self.platform
@@ -179,23 +182,20 @@ class GeoXPlanet:
         print "Done!"
 
     def lookupIP(self, IP):
-        #start_time = time.time()
+        start_time = time.time()
         found = False
         if IP in self.locationCache.keys():
-            #print "IP Found in locationCache"
             return self.locationCache[IP]
         else:
-            print "Pulling %s from db..." % IP
+            if self.DEBUG: print "Pulling %s from db..." % IP
             IPE = int(IPAddress(IP))
             query = "SELECT lat, lon FROM IpBlocks WHERE ipstart <= %s and ipend >= %s LIMIT 1;" % (IPE, IPE)
-            #query_begin = time.time()
+            query_begin = time.time()
             res = self.dbc.execute(query)
             row = res.fetchone()
-            #print "dbc.execute took %s seconds" % (time.time() - query_begin)
+            if self.DEBUG: print "dbc.execute took %s seconds" % (time.time() - query_begin)
             self.locationCache[IP] = row
-            #print "%s in %s" % (IP, row)
-            #print "lookupIP took %s seconds" % (time.time() - start_time)
-            #sys.stdout.flush()
+            if self.DEBUG: print "lookupIP took %s seconds" % (time.time() - start_time)
 
     def _isMartian(self, ipAddr):
         for cidr in self.martians:
