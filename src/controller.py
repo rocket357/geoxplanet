@@ -181,36 +181,22 @@ class GeoXPlanet:
 		print "Done!"
 
 	def lookupIP(self, IP):
-		start_time = time.time()
+		#start_time = time.time()
 		found = False
 		if IP in self.locationCache.keys():
-			print "IP Found in locationCache"
+			#print "IP Found in locationCache"
 			return self.locationCache[IP]
 		else:
-			print IP
-			IPE = self.ipRangeToDecimal(IP)
-			query = "SELECT * FROM IpBlocks WHERE ipstart < %s and ipend > %s;" % (IPE, IPE)
-			query_begin = time.time()
+			IPE = int(IPAddress(IP))
+			query = "SELECT * FROM IpBlocks WHERE ipstart <= %s and ipend => %s;" % (IPE, IPE)
+			#query_begin = time.time()
 			res = self.dbc.execute(query)
-			print "dbc.execute took %s seconds" % (time.time() - query_begin)
+			#print "dbc.execute took %s seconds" % (time.time() - query_begin)
 			row = res.fetchone()
 			self.locationCache[IP] = row
-			print "%s in %s" % (IP, row)
-			print "lookupIP took %s seconds" % (time.time() - start_time)
+			#print "%s in %s" % (IP, row)
+			#print "lookupIP took %s seconds" % (time.time() - start_time)
 			sys.stdout.flush()	
-
-	def ipRangeToDecimal(self, ip):
-		encodedIP = 0
-		multiplier = 3
-		for octet in ip.split('.'):
-			place = 0
-			octetValue = 0
-			for digit in octet[::-1]:
-				octetValue += self.hexChars.index(digit)*(10**place)
-				place += 1
-			encodedIP += (256**multiplier)*octetValue
-			multiplier -= 1
-		return encodedIP
 
 	def _isMartian(self, ipAddr):
 		for cidr in self.martians:
@@ -244,6 +230,7 @@ class GeoXPlanet:
 					print ipAddr
 					self.lookupIP(ipAddr)
 					localActiveConnections.append("%s,%s" % (ipAddr, ipPort))
+					# TODO - causes random hangs?
 					#if ipAddr not in self.tracedIPs.keys():
 					#	self.traceroute(ipAddr)
 
