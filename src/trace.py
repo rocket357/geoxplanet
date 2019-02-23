@@ -34,7 +34,6 @@ class trace(Thread):
         try:
             bit_bucket = open(os.devnull, 'w')
             output = subprocess.check_output([self.traceCommand, self.hops, '15', self.ipStr], stderr=bit_bucket)
-            if self.DEBUG: print output
         except subprocess.CalledProcessError, e:
             if self.DEBUG:
                 print e
@@ -43,7 +42,7 @@ class trace(Thread):
             if ipMatch is not None:
                 addr = ipMatch.group(1)
                 self.results.append(addr)
-        if self.results[:-1] != self.ipStr:
+        if self.results[-1] != self.ipStr:
             self.results.append(self.ipStr)
         if self.DEBUG:
             print "Trace finished on %s in %s seconds" % (self.ipStr, time.time() - begin)
