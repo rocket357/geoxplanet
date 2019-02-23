@@ -174,7 +174,7 @@ class GeoXPlanet:
                     ips_lat_lon = []
                     self.db.commit()
                 except Exception, e:
-                    print "FUCKED:  %s %s %s %s" % (net, brd, cols[7], cols[8])
+                    print "Import failed:  %s %s %s %s" % (net, brd, cols[7], cols[8])
                     print e
                 finally:
                     ips_lat_lon = []
@@ -184,10 +184,10 @@ class GeoXPlanet:
         print "Rows processed:  %s" % count
         print "Creating indexes...",
         sys.stdout.flush()
-        create_index = """CREATE INDEX ipstart_idx ON IpBlocks(ipstart,lat,lon);"""
+        create_index = """CREATE INDEX ipstart_idx ON IpBlocks(ipend,ipstart,lat,lon);"""
         self.dbc.execute(create_index)
-        create_index = """CREATE INDEX ipend_idx ON IpBlocks(ipend,lat,lon);"""
-        self.dbc.execute(create_index)
+        #create_index = """CREATE INDEX ipend_idx ON IpBlocks(ipend,lat,lon);"""
+        #self.dbc.execute(create_index)
         self.db.commit()
         print "Done!"
         print "DB Build Completed in %s seconds" % (time.time() - db_build_start)
@@ -245,7 +245,7 @@ class GeoXPlanet:
     def traceroute(self, ipAddr):
         # start a separate thread (trace class) so we can continue
         # without having to wait around for the traceroute to complete
-        curtrace = trace(ipAddr)
+        curtrace = trace(ipAddr, self.DEBUG)
         curtrace.start()
         self.tracedIPs[ipAddr] = curtrace
 

@@ -8,7 +8,7 @@
 ## 
 ## BSD 2-clause license
 
-import sys, os, time, shutil, ConfigParser
+import sys, os, time, shutil, ConfigParser, atexit
 from controller import GeoXPlanet
 
 GXPVERSION = '0.99'
@@ -17,7 +17,9 @@ CONFDIR = os.path.join(HOME,".config")
 GXPDIR = os.path.join(CONFDIR,"GeoXPlanet")
 defaultConfig = os.path.join(GXPDIR,"GeoXPlanet.conf")
 configfp = None
+trace = None
 
+# check if the configs are in place, if not, build out a default config
 try:
     configfp = open(defaultConfig, 'r')
 except IOError:
@@ -34,12 +36,10 @@ except IOError:
                 os.mkdir(CONFDIR)
             except OSError, err:
                 print err
-                sys.exit()
         try:
             os.mkdir(GXPDIR)
         except OSError, err:
             print err
-            sys.exit()
         configfp = open(defaultConfig, 'w')
         configfp.write("""
 [General]
@@ -68,10 +68,21 @@ finally:
     config.readfp(configfp)
     if config.get("Static","VERSION") == GXPVERSION:
         print "Launching GeoXPlanet-%s" % GXPVERSION
+        trace = (config.get("General","Trace") == 'True')
     else:
         pass  # TODO handle mis-matched config/script versions?
     configfp.close()
 
 if __name__ == '__main__':
     program = GeoXPlanet(config)
-    program.run()
+
+    @atexit.register
+    def out():
+        if trace:
+            for p in program.tracedIPs.keys():
+                program.tracedIPs[p].stop()
+
+    try:
+        program.run()
+    except KeyboardInterrupt, e:
+        pass
