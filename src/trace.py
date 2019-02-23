@@ -8,7 +8,7 @@ class trace(Thread):
     ipRegex = None
     ipStr = None
     traceCommand = None
-    results = ''
+    results = None
     hops = None
 
     def __init__(self, ipStr, DEBUG):
@@ -17,6 +17,7 @@ class trace(Thread):
         self.DEBUG = DEBUG
         self.ipRegex = re.compile("([0-9]*\.[0-9]*\.[0-9]*\.[0-9]*)")
         self.ipStr = ipStr
+        self.results = []
         if sys.platform == 'win32':
             self.traceCommand = 'tracert'
             self.hops = '-h'
@@ -41,22 +42,13 @@ class trace(Thread):
             ipMatch = self.ipRegex.search(line)
             if ipMatch is not None:
                 addr = ipMatch.group(1)
-                if len(self.results) > 0:
-                    self.results = "%s %s" % (self.results, addr)
-                else:
-                    self.results = addr
-        if len(self.results) > 1:
-            self.results = "%s %s" % (self.results, self.ipStr)
-        else:
-            self.results = self.ipStr
+                self.results.append(addr)
+        if self.results[:-1] != self.ipStr:
+            self.results.append(self.ipStr)
         if self.DEBUG:
             print "Trace finished on %s in %s seconds" % (self.ipStr, time.time() - begin)
         self.running = 'complete'
     
-    def getList(self):
-        if self.DEBUG: print self.results
-        return self.results.split(' ')
-
     def stopped(self):
         return self._stop_event.is_set()
 

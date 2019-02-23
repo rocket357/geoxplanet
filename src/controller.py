@@ -250,15 +250,17 @@ class GeoXPlanet:
             self.lookupIP(ip)
 
             if self.TRACE:
-                if ip not in self.tracedIPs.keys():
-                    self.traceroute(ip)
+                if ip not in self.traceCache.keys():
+                    if self.DEBUG: print "Adding %s to traceCache" % ip
                     self.traceCache[ip] = []
-                elif len(self.traceCache[ip]) < 1 and self.tracedIPs[ip].running == 'complete':
-                    self.traceCache[ip] = self.tracedIPs[ip].getList()
+                    self.traceroute(ip)
+                if len(self.traceCache[ip]) < 1 and self.tracedIPs[ip].running == 'complete':
+                    self.traceCache[ip] = self.tracedIPs[ip].results
                     if self.DEBUG:
                         print "TRACE RESULTS FOR %s:  %s" % (ip, self.traceCache[ip])
                     for hop in self.traceCache[ip]:
                         self.lookupIP(hop) # geolocate the hops so we can graph the path taken to ip
+                    #del self.tracedIPs[ip]
 
     def run(self):
         delay = float(self.cfg.get("General","DELAY"))
