@@ -23,12 +23,14 @@ class GeoXPlanet:
     cfg = None
     DB_SQL = None
     GXPDIR = None
+    TRACE = None
     platform = None
     desktop = None
     netstat = 'netstat -na'
     flowsrc = None
     locationCache = {}
     tracedIPs = {}
+    traceCache = {}
     # https://www.cisco.com/assets/sol/sb/Switches_Emulators_v2_2_015/help/nk_configuring_device_security26.html
     # with RFC1918 ranges added in
     martians = [
@@ -46,6 +48,7 @@ class GeoXPlanet:
     def __init__(self, config):
         self.cfg = config
         self.DEBUG = (config.get("General", "DEBUG") == 'True')
+        self.TRACE = (config.get("General", "Trace") == 'True')
         if self.DEBUG: print "Debugging enabled."
         self.GXPDIR = config.get("Static", "GXPDIR")
         self.platform = sys.platform
@@ -193,8 +196,6 @@ class GeoXPlanet:
         print "DB Build Completed in %s seconds" % (time.time() - db_build_start)
 
     def lookupIP(self, IP):
-        start_time = time.time()
-        found = False
         if IP in self.locationCache.keys():
             return self.locationCache[IP]
         else:
@@ -206,7 +207,6 @@ class GeoXPlanet:
             row = res.fetchone()
             if self.DEBUG: print "dbc.execute took %s seconds" % (time.time() - query_begin)
             self.locationCache[IP] = row
-            if self.DEBUG: print "lookupIP took %s seconds" % (time.time() - start_time)
 
     def _isMartian(self, ipAddr):
         for cidr in self.martians:
@@ -219,7 +219,6 @@ class GeoXPlanet:
 
     def getLocalActiveConnections(self):
         localActiveConnections = []
-        traceDict = {}
         connectionList = os.popen(self.netstat).readlines()
         for conn in connectionList:
             if 'ESTABLISHED' not in conn:
@@ -235,12 +234,8 @@ class GeoXPlanet:
                 ipAddr = ipport.split(':')[0]
                 ipPort = ipport.split(':')[1]
             if not self._isMartian(ipAddr):
-                self.lookupIP(ipAddr)
                 localActiveConnections.append("%s,%s" % (ipAddr, ipPort))
-                # TODO - causes random hangs?
-                if self.cfg.get("General","Trace") == 'True':
-                    if ipAddr not in self.tracedIPs.keys():
-                        self.traceroute(ipAddr)
+        return localActiveConnections
 
     def traceroute(self, ipAddr):
         # start a separate thread (trace class) so we can continue
@@ -250,11 +245,23 @@ class GeoXPlanet:
         self.tracedIPs[ipAddr] = curtrace
 
     def processList(self, ipList):
-        for ip in ipList:
-            pass
+        for ipport in ipList:
+            ip = ipport.split(',')[0]
+            self.lookupIP(ip)
+
+            if self.TRACE:
+                if ip not in self.tracedIPs.keys():
+                    self.traceroute(ip)
+                    self.traceCache[ip] = []
+                elif len(self.traceCache[ip]) < 1 and self.tracedIPs[ip].running == 'complete':
+                    self.traceCache[ip] = self.tracedIPs[ip].getList()
+                    if self.DEBUG:
+                        print "TRACE RESULTS FOR %s:  %s" % (ip, self.traceCache[ip])
+                    for hop in self.traceCache[ip]:
+                        self.lookupIP(hop) # geolocate the hops so we can graph the path taken to ip
 
     def run(self):
         delay = float(self.cfg.get("General","DELAY"))
         while True:
             time.sleep(delay)
-            self.getLocalActiveConnections()
+            self.processList(self.getLocalActiveConnections())
