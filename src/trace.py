@@ -38,6 +38,8 @@ class trace(Thread):
             if self.DEBUG:
                 print e
         for line in output.split('\n'):
+            if 'Tracing route to' in line:
+                continue
             ipMatch = self.ipRegex.search(line)
             if ipMatch is not None:
                 addr = ipMatch.group(1)
