@@ -1,3 +1,14 @@
+#!/usr/bin/env python
+
+## src/trace.py
+## Author: rocket357
+## sisson.j@gmail.com
+##
+## This script contains the traceroute logic for GeoXPlanet.
+##
+## BSD 2-clause license
+
+
 from threading import Thread
 import threading
 import os, re, sys, socket, time, subprocess

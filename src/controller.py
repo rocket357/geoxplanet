@@ -14,6 +14,8 @@ import zipfile
 import sqlite3
 from netaddr import IPNetwork, IPAddress
 from trace import trace
+if sys.platform == 'win32':
+    import ctypes
 
 class GeoXPlanet:
 
