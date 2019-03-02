@@ -9,6 +9,7 @@ How to use:
     python GeoXPlanet.py
 
 Current status:
+
 The "infrastructure" code is in place, minus the actual image generation bits.  For now, the code will auto-download
 the Maxmind GeoLite2 database (corruption occurs on Windows, workarounds below), unzip it, and format the data into
 a sqlite3 database.  Then the code will loop over netstat output (planned: pflow/netflow support) and perform db lookups
